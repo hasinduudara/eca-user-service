@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -47,6 +49,32 @@ public class UserController {
         } catch (Exception e) {
             // Return a 404 Not Found status if the user does not exist
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Endpoint to update user details and profile image.
+     *
+     * @param id           The ID of the user
+     * @param name         The new name (optional)
+     * @param email        The new email (optional)
+     * @param profileImage The new profile image (optional)
+     * @return ResponseEntity containing the updated User or error status
+     */
+    @PutMapping("/update/{id}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable Long id,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) MultipartFile profileImage) {
+
+        try {
+            User updatedUser = userService.updateUser(id, name, email, profileImage);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

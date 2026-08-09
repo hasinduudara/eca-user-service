@@ -67,4 +67,40 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
     }
+
+    /**
+     * Updates an existing user's details and profile image.
+     *
+     * @param id           The ID of the user to update
+     * @param name         The new name (optional)
+     * @param email        The new email (optional)
+     * @param profileImage The new profile image file (optional)
+     * @return The updated User entity
+     * @throws IOException If image upload fails
+     */
+    public User updateUser(Long id, String name, String email, MultipartFile profileImage) throws IOException {
+
+        // Find the existing user from the database
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+
+        // Update the name if provided
+        if (name != null && !name.trim().isEmpty()) {
+            existingUser.setName(name);
+        }
+
+        // Update the email if provided
+        if (email != null && !email.trim().isEmpty()) {
+            existingUser.setEmail(email);
+        }
+
+        // Check if a new profile image was provided, upload it, and update the URL
+        if (profileImage != null && !profileImage.isEmpty()) {
+            String newImageUrl = gcpStorageService.uploadProfileImage(profileImage);
+            existingUser.setProfileImageUrl(newImageUrl);
+        }
+
+        // Save and return the updated user entity
+        return userRepository.save(existingUser);
+    }
 }
