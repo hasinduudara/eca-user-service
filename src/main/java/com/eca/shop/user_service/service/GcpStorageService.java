@@ -1,8 +1,10 @@
 package com.eca.shop.user_service.service;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,21 +25,23 @@ public class GcpStorageService {
      * @throws IOException If an error occurs during file processing
      */
     public String uploadProfileImage(MultipartFile file) throws IOException {
-        // Initialize the GCP Storage service
-        Storage storage = StorageOptions.getDefaultInstance().getService();
+        // Read json file for resources
+        ClassPathResource resource = new ClassPathResource("gcp-credentials.json");
 
-        // Generate a unique file name to prevent overriding existing files
+        // Connect Storage using Credentials
+        Storage storage = StorageOptions.newBuilder()
+                .setCredentials(GoogleCredentials.fromStream(resource.getInputStream()))
+                .build()
+                .getService();
+
         String fileName = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
 
-        // Configure the blob (file) details including the target bucket and content type
         BlobInfo blobInfo = BlobInfo.newBuilder(BUCKET_NAME, fileName)
                 .setContentType(file.getContentType())
                 .build();
 
-        // Upload the file bytes to GCP Storage
         storage.create(blobInfo, file.getBytes());
 
-        // Construct and return the public URL to access the uploaded image
         return String.format("https://storage.googleapis.com/%s/%s", BUCKET_NAME, fileName);
     }
 }
