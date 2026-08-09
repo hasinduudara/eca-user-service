@@ -3,6 +3,7 @@ package com.eca.shop.user_service.service;
 import com.eca.shop.user_service.entity.User;
 import com.eca.shop.user_service.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,12 +18,17 @@ public class UserService {
     @Autowired
     private GcpStorageService gcpStorageService;
 
+    // Injecting the PasswordEncoder to hash passwords
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     /**
      * Registers a new user in the database. Uploads the profile image if provided.
+     * The raw password is encrypted using BCrypt before saving.
      *
      * @param name         The name of the user
      * @param email        The email of the user
-     * @param password     The password of the user
+     * @param password     The raw password of the user
      * @param profileImage The profile image file (optional)
      * @return The saved User entity
      * @throws IOException If image upload fails
@@ -36,12 +42,14 @@ public class UserService {
             imageUrl = gcpStorageService.uploadProfileImage(profileImage);
         }
 
-        // Build the User object using Lombok builder
-        // Note: In a production environment, the password must be encrypted using BCrypt
+        // Encrypt the raw password using BCryptPasswordEncoder
+        String encryptedPassword = passwordEncoder.encode(password);
+
+        // Build the User object using Lombok builder with the encrypted password
         User user = User.builder()
                 .name(name)
                 .email(email)
-                .password(password)
+                .password(encryptedPassword) // Set the encrypted password here
                 .profileImageUrl(imageUrl)
                 .build();
 

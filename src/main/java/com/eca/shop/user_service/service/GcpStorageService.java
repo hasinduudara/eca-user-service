@@ -1,14 +1,19 @@
 package com.eca.shop.user_service.service;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 
 @Service
@@ -17,31 +22,53 @@ public class GcpStorageService {
     // Define the GCP bucket name for user profiles
     private final String BUCKET_NAME = "eca-user-profiles-bucket";
 
+    // The Storage object to interact with Google Cloud Storage
+    private final Storage storage;
+
+    // Constructor to initialize the GCP Storage client using the credentials JSON file
+    public GcpStorageService() throws IOException {
+        GoogleCredentials credentials = GoogleCredentials.fromStream(
+                new ClassPathResource("gcp-credentials.json").getInputStream());
+        this.storage = StorageOptions.newBuilder().setCredentials(credentials).build().getService();
+    }
+
     /**
      * Uploads the profile image to Google Cloud Storage and returns the public URL.
      *
-     * @param file The multipart file received from the client
+     * @param profileImage The multipart file received from the client
      * @return The public URL of the uploaded image
      * @throws IOException If an error occurs during file processing
      */
-    public String uploadProfileImage(MultipartFile file) throws IOException {
-        // Read json file for resources
-        ClassPathResource resource = new ClassPathResource("gcp-credentials.json");
+    public String uploadProfileImage(MultipartFile profileImage) throws IOException {
 
-        // Connect Storage using Credentials
-        Storage storage = StorageOptions.newBuilder()
-                .setCredentials(GoogleCredentials.fromStream(resource.getInputStream()))
-                .build()
-                .getService();
+        // Generate a unique file name
+        String fileName = UUID.randomUUID().toString() + "-" + System.currentTimeMillis() + ".jpg";
 
-        String fileName = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+        // Create an output stream to hold the compressed image data
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-        BlobInfo blobInfo = BlobInfo.newBuilder(BUCKET_NAME, fileName)
-                .setContentType(file.getContentType())
+        // Compress the image using Thumbnailator
+        // Resizes to 800x800 maximum, sets format to JPG, and reduces quality to 70%
+        Thumbnails.of(profileImage.getInputStream())
+                .size(800, 800)
+                .outputFormat("jpg")
+                .outputQuality(0.7)
+                .toOutputStream(outputStream);
+
+        // Convert the compressed image back to an InputStream for GCP upload
+        byte[] compressedImageBytes = outputStream.toByteArray();
+        InputStream compressedInputStream = new ByteArrayInputStream(compressedImageBytes);
+
+        // Build the BlobInfo for GCP
+        BlobId blobId = BlobId.of(BUCKET_NAME, fileName);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType("image/jpeg") // Always setting as JPEG due to outputFormat("jpg")
                 .build();
 
-        storage.create(blobInfo, file.getBytes());
+        // Upload the compressed image stream to GCP
+        storage.createFrom(blobInfo, compressedInputStream);
 
-        return String.format("https://storage.googleapis.com/%s/%s", BUCKET_NAME, fileName);
+        // Return the public URL
+        return "https://storage.googleapis.com/" + BUCKET_NAME + "/" + fileName;
     }
 }
