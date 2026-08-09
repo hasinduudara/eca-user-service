@@ -77,4 +77,26 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    /**
+     * Endpoint to authenticate a user and receive JWT tokens.
+     *
+     * @param loginRequest DTO containing email and password
+     * @return ResponseEntity with access and refresh tokens
+     */
+    @PostMapping("/login")
+    public ResponseEntity<com.eca.shop.user_service.dto.AuthResponse> login(
+            @RequestBody com.eca.shop.user_service.dto.LoginRequest loginRequest) {
+
+        try {
+            com.eca.shop.user_service.dto.AuthResponse authResponse = userService.loginUser(
+                    loginRequest.getEmail(),
+                    loginRequest.getPassword()
+            );
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            // Return 401 Unauthorized if credentials do not match
+            return ResponseEntity.status(401).build();
+        }
+    }
 }

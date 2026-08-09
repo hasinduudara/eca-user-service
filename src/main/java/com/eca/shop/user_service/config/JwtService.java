@@ -5,6 +5,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -13,9 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@PropertySource("classpath:env.properties")
 public class JwtService {
 
-    // Read the secret key from the .env file
+    // Read the secret key from the env.properties file
     @Value("${JWT_SECRET}")
     private String secretKey;
 
@@ -45,7 +47,7 @@ public class JwtService {
     private String createToken(Map<String, Object> claims, String subject, long expirationTime) {
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(subject) // Typically the user's email or ID
+                .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
@@ -56,7 +58,6 @@ public class JwtService {
      * Decodes the secret key and returns a cryptographic Key object
      */
     private Key getSignKey() {
-        // Use the dynamically loaded secretKey instead of the hardcoded one
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }

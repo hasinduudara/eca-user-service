@@ -94,7 +94,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Dotenv for loading environment variables from .env file -->
+		<!-- Dotenv for loading environment variables from env.properties file -->
 		<dependency>
 			<groupId>me.paulschwarz</groupId>
 			<artifactId>spring-dotenv</artifactId>

@@ -22,6 +22,10 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // Inject JwtService for token generation
+    @Autowired
+    private com.eca.shop.user_service.config.JwtService jwtService;
+
     /**
      * Registers a new user in the database. Uploads the profile image if provided.
      * The raw password is encrypted using BCrypt before saving.
@@ -102,5 +106,35 @@ public class UserService {
 
         // Save and return the updated user entity
         return userRepository.save(existingUser);
+    }
+
+    /**
+     * Authenticates a user and generates JWT tokens.
+     *
+     * @param email    The user's email
+     * @param password The raw password provided by the user
+     * @return AuthResponse containing access and refresh tokens
+     */
+    public com.eca.shop.user_service.dto.AuthResponse loginUser(String email, String password) {
+
+        // Find the user by email
+        // Note: You need to add findByEmail(String email) method in UserRepository if not already present
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+
+        // Check if the provided password matches the encrypted password in the database
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        // Generate tokens if authentication is successful
+        String accessToken = jwtService.generateAccessToken(user.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
+
+        // Return the tokens
+        return com.eca.shop.user_service.dto.AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 }

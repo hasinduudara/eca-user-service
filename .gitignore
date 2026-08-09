@@ -34,4 +34,5 @@ build/
 
 gcp-credentials.json
 
-.env
+src/main/resources/env.properties
+src/main/resources/env.properties
