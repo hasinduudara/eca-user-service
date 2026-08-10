@@ -99,4 +99,38 @@ public class UserController {
             return ResponseEntity.status(401).build();
         }
     }
+
+    /**
+     * Endpoint to request a password reset OTP.
+     *
+     * @param request DTO containing the user's email
+     * @return ResponseEntity with success or error message
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @RequestBody com.eca.shop.user_service.dto.ForgotPasswordRequest request) {
+        try {
+            userService.processForgotPassword(request.getEmail());
+            return ResponseEntity.ok("OTP sent to your email successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint to reset the password using the OTP.
+     *
+     * @param request DTO containing email, OTP, and new password
+     * @return ResponseEntity with success or error message
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestBody com.eca.shop.user_service.dto.ResetPasswordRequest request) {
+        try {
+            userService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
+            return ResponseEntity.ok("Password reset successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

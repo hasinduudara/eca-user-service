@@ -26,6 +26,10 @@ public class UserService {
     @Autowired
     private com.eca.shop.user_service.config.JwtService jwtService;
 
+    // Inject EmailService to send emails
+    @Autowired
+    private com.eca.shop.user_service.service.EmailService emailService;
+
     /**
      * Registers a new user in the database. Uploads the profile image if provided.
      * The raw password is encrypted using BCrypt before saving.
@@ -136,5 +140,64 @@ public class UserService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    /**
+     * Generates a 6-digit OTP, saves it with an expiration time, and sends it via email.
+     *
+     * @param email The user's email address
+     */
+    public void processForgotPassword(String email) {
+        // Find the user by email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Generate a random 6-digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+
+        // Set the OTP and its expiration time (e.g., 10 minutes from now)
+        user.setResetOtp(otp);
+        user.setResetOtpExpiryTime(java.time.LocalDateTime.now().plusMinutes(10));
+
+        // Save the updated user to the database
+        userRepository.save(user);
+
+        // Prepare and send the email
+        String emailSubject = "Password Reset OTP - ECA Shop";
+        String emailBody = "Your password reset OTP is: " + otp + "\n\nThis OTP is valid for 10 minutes. Do not share this with anyone.";
+        emailService.sendSimpleEmail(user.getEmail(), emailSubject, emailBody);
+    }
+
+    /**
+     * Validates the OTP and updates the user's password.
+     *
+     * @param email       The user's email address
+     * @param otp         The OTP received by the user
+     * @param newPassword The new password
+     */
+    public void resetPassword(String email, String otp, String newPassword) {
+        // Find the user by email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Check if the OTP matches
+        if (user.getResetOtp() == null || !user.getResetOtp().equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        // Check if the OTP has expired
+        if (user.getResetOtpExpiryTime().isBefore(java.time.LocalDateTime.now())) {
+            throw new RuntimeException("OTP has expired");
+        }
+
+        // Encrypt the new password and update the user entity
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // Clear the OTP fields so it cannot be reused
+        user.setResetOtp(null);
+        user.setResetOtpExpiryTime(null);
+
+        // Save the updated user to the database
+        userRepository.save(user);
     }
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -29,4 +30,10 @@ public class User {
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
+
+    // Stores the 6-digit OTP for password reset
+    private String resetOtp;
+
+    // Stores the expiration time of the OTP
+    private java.time.LocalDateTime resetOtpExpiryTime;
 }
