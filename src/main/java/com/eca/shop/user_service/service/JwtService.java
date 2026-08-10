@@ -1,4 +1,4 @@
-package com.eca.shop.user_service.config;
+package com.eca.shop.user_service.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -60,5 +60,32 @@ public class JwtService {
     private Key getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /**
+     * Extracts the email (subject) from the given JWT token
+     */
+    public String extractEmail(String token) {
+        return io.jsonwebtoken.Jwts.parserBuilder()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    /**
+     * Validates if the token is properly signed and not expired
+     */
+    public boolean isTokenValid(String token) {
+        try {
+            io.jsonwebtoken.Jwts.parserBuilder()
+                    .setSigningKey(getSignKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

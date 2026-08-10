@@ -24,7 +24,7 @@ public class UserService {
 
     // Inject JwtService for token generation
     @Autowired
-    private com.eca.shop.user_service.config.JwtService jwtService;
+    private JwtService jwtService;
 
     // Inject EmailService to send emails
     @Autowired
@@ -199,5 +199,31 @@ public class UserService {
 
         // Save the updated user to the database
         userRepository.save(user);
+    }
+
+    /**
+     * Generates a new Access Token using a valid Refresh Token.
+     *
+     * @param refreshToken The valid refresh token provided by the user
+     * @return AuthResponse containing the new access token and the same refresh token
+     */
+    public com.eca.shop.user_service.dto.AuthResponse refreshToken(String refreshToken) {
+        // Validate the refresh token
+        if (jwtService.isTokenValid(refreshToken)) {
+
+            // Extract the user's email from the token
+            String email = jwtService.extractEmail(refreshToken);
+
+            // Generate a new access token
+            String newAccessToken = jwtService.generateAccessToken(email);
+
+            // Return the new tokens (keeping the old refresh token valid)
+            return com.eca.shop.user_service.dto.AuthResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+        } else {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
     }
 }

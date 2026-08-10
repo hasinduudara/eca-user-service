@@ -133,4 +133,23 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /**
+     * Endpoint to get a new access token using a refresh token.
+     *
+     * @param request DTO containing the refresh token
+     * @return ResponseEntity with the new AuthResponse
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<com.eca.shop.user_service.dto.AuthResponse> refreshToken(
+            @RequestBody com.eca.shop.user_service.dto.RefreshTokenRequest request) {
+
+        try {
+            com.eca.shop.user_service.dto.AuthResponse authResponse =
+                    userService.refreshToken(request.getRefreshToken());
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
 }
