@@ -140,6 +140,7 @@ public class UserService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .role(user.getRole())
+                .userId(user.getId())
                 .build();
     }
 
