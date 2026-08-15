@@ -139,6 +139,7 @@ public class UserService {
         return com.eca.shop.user_service.dto.AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .role(user.getRole())
                 .build();
     }
 

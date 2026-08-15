@@ -38,4 +38,6 @@ public class User {
 
     // Stores the expiration time of the OTP
     private java.time.LocalDateTime resetOtpExpiryTime;
+
+    private String role = "ROLE_USER";
 }
